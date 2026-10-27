@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SackMix/SackMix.csproj" />
+    <Project Path="src/SackMix.Core/SackMix.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SackMix.Tests/SackMix.Tests.csproj" />
+  </Folder>
+</Solution>
