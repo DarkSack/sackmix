@@ -55,8 +55,8 @@ internal static class ProcessInfo
             }
             catch (IOException) { }
         }
-        var name = Path.GetFileNameWithoutExtension(exe);
-        return name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : exe;
+        // The file on disk keeps its capitals ("FortniteClient-Win64-Shipping"); exe is lower case.
+        return Core.Rules.CleanName(Path.GetFileNameWithoutExtension(path ?? exe));
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]

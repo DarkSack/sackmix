@@ -7,15 +7,28 @@ silencio. Con un botón, cada canal aparece en **OBS** como una fuente de audio 
 
 ![SackMix](docs/captura.png)
 
+## Instalar
+
+SackMix es **gratis**. Funciona en Windows 10 y 11 (64 bits) y no necesita .NET instalado.
+
+Ejecuta `SackMix-Setup-<versión>.exe` (ver [Desarrollo](#desarrollo)). El asistente muestra las condiciones de uso y
+privacidad, que hay que aceptar, y permite elegir la carpeta y marcar el acceso en el escritorio y el inicio con
+Windows (arranca oculto en la bandeja). No pide permisos de administrador. Para actualizar, se instala la versión
+nueva encima: los ajustes se conservan. Para desinstalar, Configuración › Aplicaciones.
+
 ## Uso
 
-- **Abrir:** `dist\SackMix.exe` (un solo archivo, no necesita .NET instalado). Solo se abre una copia.
+- **Abrir:** desde el menú Inicio o el escritorio. Solo se abre una copia: abrirla otra vez muestra la que ya está.
+- **Bandeja:** cerrar la ventana deja SackMix funcionando junto al reloj (los volúmenes siguen aplicándose).
+  Clic en el icono para abrirlo; clic derecho › Salir para cerrarlo del todo. Al salir, cada programa se queda
+  en Windows con el último volumen que tenía.
 - **Canales:** el nombre se edita encima; el punto de color lo cambia; «⋯» cambia el color o borra el canal
   (sus programas pasan a «Otros», que no se puede borrar y recoge todo lo que nadie colocó). «Nuevo canal» crea otro.
 - **Mover un programa:** arrástralo por su icono o su nombre a otro canal, o clic derecho → «Mover a…»
   (con teclado: foco en su barra y Shift+F10). Se recuerda por programa.
 - **Primer reparto automático:** Discord/TeamSpeak/Mumble → Discord; Spotify, Apple Music, TIDAL… → Música;
-  lo instalado en `steamapps\common`, Epic, Riot, Xbox, GOG… y Minecraft (Java y Bedrock) → Juego; el resto → Otros.
+  lo instalado en `steamapps\common`, Epic, Riot, Xbox, GOG…, los juegos de Unreal (`…-Shipping.exe`, estén donde
+  estén) y Minecraft (Java y Bedrock) → Juego; el resto → Otros. Lo que nunca colocaste se vuelve a repartir al abrirlo.
 - **Volumen real** = volumen del programa × volumen del canal; silenciado si lo está cualquiera de los dos.
   Si mueves un programa en el mezclador de Windows, SackMix lo toma como el nuevo volumen del programa.
 - **Salidas:** sigue a los programas en **todas** las salidas activas (por si Discord usa otra). Los sonidos del
@@ -58,11 +71,19 @@ sin comprimir.
 
 ## Desarrollo
 
-- `dotnet test SackMix.slnx` — 20 pruebas: reparto, mezcla, archivo de ajustes y OBS (contra un servidor
+- `dotnet test SackMix.slnx` — pruebas: reparto, mezcla, archivo de ajustes y OBS (contra un servidor
   falso que habla obs-websocket 5, incluida la contraseña).
-- `.\publish.ps1` — pruebas y `dist\SackMix.exe` (autocontenido, ~141 MB en disco).
+- `.\publish.ps1` — pruebas, `dist\SackMix.exe` (autocontenido, ~166 MB en disco) y el instalador
+  `dist\SackMix-Setup-<versión>.exe`, con [Inno Setup 6](https://jrsoftware.org/isinfo.php)
+  (`winget install JRSoftware.InnoSetup`); su script es [installer/SackMix.iss](installer/SackMix.iss).
 - `tools\generar-icono.ps1` — regenera `Assets\sackmix.ico`.
 
 Estructura: `src/SackMix.Core` (canales, reglas, ajustes y OBS, sin WPF), `src/SackMix` (WPF: `Audio/` es la
 API Core Audio de Windows sin librerías externas, `ViewModels.cs`, `MainWindow.xaml`, `Theme.xaml`),
 `tests/SackMix.Tests`.
+
+## Licencia
+
+SackMix es gratis: puedes usarlo en todos tus equipos, pero no venderlo ni distribuir versiones modificadas. Las
+condiciones completas y la privacidad están en [installer/LICENCIA.txt](installer/LICENCIA.txt), el mismo texto que
+muestra el instalador.

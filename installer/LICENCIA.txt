@@ -1,0 +1,37 @@
+﻿CONDICIONES DE USO Y PRIVACIDAD DE SACKMIX
+Revisado: 4 de noviembre de 2026
+
+Responsable: Johan Jafet Del Valle Santiago (Sackito). Contacto: donsackito@protonmail.com
+
+LO CORTO
+SackMix separa el audio de cada programa en canales con nombre (Juego, Discord, Música…) y cambia su volumen en Windows. Funciona en tu PC, sin cuenta, sin anuncios y sin estadísticas de uso, y no se conecta a internet.
+
+1. LICENCIA DE USO
+- SackMix es gratis. Puedes instalarlo y usarlo en todos los equipos que quieras, también las versiones futuras.
+- No puedes venderlo, alquilarlo ni cobrar por él, ni distribuir copias modificadas.
+- No lo presentes como propio. SackMix, su nombre y su icono son de Sackito.
+
+2. CÓMO FUNCIONA CON TU AUDIO
+- SackMix cambia el volumen y el silencio que Windows tiene para cada programa (el mismo del Mezclador de volumen de Windows). No instala drivers ni dispositivos de audio.
+- Al cerrar SackMix del todo, cada programa se queda con el último volumen que tenía. Si algo suena bajo o en silencio, revisa el canal en SackMix o el Mezclador de volumen de Windows.
+
+3. GARANTÍA Y RESPONSABILIDAD
+- SackMix se entrega tal cual. Hacemos lo posible por que funcione bien en las versiones de Windows que soporta y por arreglar lo que se rompa, pero no garantizamos que funcione sin fallos.
+- Podemos cambiar o retirar funciones en versiones nuevas.
+- En la medida que permita la ley, no respondemos por pérdida de datos ni por daños indirectos por usar el programa. Nada de esto limita los derechos que la ley te reconozca como consumidor.
+
+4. QUÉ GUARDA EN TU PC
+Todo queda en tu PC, en %LOCALAPPDATA%\SackMix: tus canales (nombre, color, volumen), en qué canal va cada programa con su volumen, y un registro de errores. Nada de eso se envía a nosotros ni a nadie.
+
+Para funcionar, SackMix lee en tu PC (sin guardarlo ni enviarlo):
+- Qué programas están sonando, su nombre, su icono y su volumen en Windows.
+- Las salidas de audio activas.
+
+5. OBS
+Solo cuando pulsas «Enviar a OBS», SackMix lee el puerto y la contraseña del servidor WebSocket de tu propio OBS (de su archivo de configuración en tu PC) y se conecta a él dentro de tu equipo (127.0.0.1) para crear o actualizar las fuentes de audio en la escena actual. La contraseña no se guarda ni sale de tu PC.
+
+6. CÓMO BORRAR TUS DATOS
+Desinstala SackMix desde Configuración > Aplicaciones y borra la carpeta %LOCALAPPDATA%\SackMix. Nosotros no guardamos datos tuyos que borrar.
+
+7. CAMBIOS Y LEY APLICABLE
+Si cambian estas condiciones, actualizaremos este texto y la fecha de arriba en la versión que lo cambie. Se rigen por las leyes de los Estados Unidos Mexicanos. Para cualquier duda: donsackito@protonmail.com

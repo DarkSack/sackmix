@@ -18,7 +18,7 @@ internal static class Log
                 if (new FileInfo(path) is { Exists: true, Length: > 256 * 1024 }) File.Delete(path);
                 File.AppendAllText(path, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{where}] {e}{Environment.NewLine}");
             }
-            catch (IOException) { }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
     }
 }

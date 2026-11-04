@@ -20,6 +20,8 @@ public sealed class Mixer(MixConfig config)
         exe = exe.ToLowerInvariant();
         if (!Config.Apps.TryGetValue(exe, out var app))
             Config.Apps[exe] = app = new AppConfig { Channel = Rules.Guess(exe, path), Volume = MixConfig.Level(windowsVolume), Muted = windowsMuted };
+        // Never placed: newer rules get a say. A program the user moved keeps its channel.
+        else if (app.Channel is null) app.Channel = Rules.Guess(exe, path);
         if (name.Length > 0) app.Name = name;
         return app;
     }

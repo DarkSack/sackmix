@@ -28,10 +28,11 @@ public partial class MainWindow : Window
             _toast.Stop();
             Toast.Visibility = Visibility.Collapsed;
         };
-        Loaded += (_, _) => vm.MetersOn = true;
+        // Meters only while someone can see them: not minimised, not in the tray.
+        IsVisibleChanged += (_, _) => vm.MetersOn = IsVisible && WindowState != WindowState.Minimized;
         StateChanged += (_, _) =>
         {
-            vm.MetersOn = WindowState != WindowState.Minimized;
+            vm.MetersOn = IsVisible && WindowState != WindowState.Minimized;
             // A maximised WindowChrome window spills past the screen by its resize border.
             Frame.Padding = WindowState == WindowState.Maximized ? new Thickness(7) : default;
             MaxButton.Content = WindowState == WindowState.Maximized ? "" : "";

@@ -27,7 +27,31 @@ public class MixerTests
     [InlineData("eldenring.exe", @"D:\SteamLibrary\steamapps\common\ELDEN RING\Game\eldenring.exe", Rules.Game)]
     [InlineData("chrome.exe", @"C:\Program Files\Google\Chrome\Application\chrome.exe", null)]
     [InlineData("wallpaper64.exe", @"C:\Program Files (x86)\Steam\steamapps\common\wallpaper_engine\wallpaper64.exe", null)]
+    // Unreal Engine games, wherever the store installed them.
+    [InlineData("fortniteclient-win64-shipping.exe", @"E:\EpicStore\Fortnite\FortniteGame\Binaries\Win64\FortniteClient-Win64-Shipping.exe", Rules.Game)]
+    [InlineData("valorant-win64-shipping.exe", null, Rules.Game)]
     public void Rules_GuessTheUsualSuspects(string exe, string? path, string? channel) => Assert.Equal(channel, Rules.Guess(exe, path));
+
+    [Theory]
+    [InlineData("FortniteClient-Win64-Shipping", "Fortnite")]
+    [InlineData("VALORANT-Win64-Shipping", "VALORANT")]
+    [InlineData("Game-Shipping_EAC_EOS", "Game")]
+    [InlineData("Client", "Client")]
+    [InlineData("spotify", "Spotify")]
+    public void Rules_CleanNameDropsEngineSuffixes(string file, string name) => Assert.Equal(name, Rules.CleanName(file));
+
+    [Fact]
+    public void NeverPlacedProgramsAreGuessedAgainButMovedOnesStay()
+    {
+        var m = Fresh();
+        // Saved by an older version that did not know the rule.
+        m.Config.Apps["fortniteclient-win64-shipping.exe"] = new AppConfig { Channel = null };
+        Assert.Equal(Rules.Game, m.App("fortniteclient-win64-shipping.exe", null, "", 1f, false).Channel);
+
+        var spotify = m.App("spotify.exe", null, "", 1f, false);
+        Mixer.Move(spotify, m.CatchAll);
+        Assert.Equal(m.CatchAll.Id, m.App("spotify.exe", null, "", 1f, false).Channel);
+    }
 
     [Fact]
     public void EffectiveIsProgramTimesChannelAndEitherMute()

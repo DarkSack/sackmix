@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace SackMix.Core;
 
 /// <summary>First guess of a channel for a program nobody has placed yet.</summary>
@@ -30,6 +32,20 @@ public static class Rules
     public static string? Guess(string exe, string? path) =>
         ChatExes.Contains(exe) ? Chat
         : MusicExes.Contains(exe) ? Music
-        : GameExes.Contains(exe) || (!NotGames.Contains(exe) && path is not null && GameFolders.Any(f => path.Contains(f, StringComparison.OrdinalIgnoreCase))) ? Game
+        : GameExes.Contains(exe) || IsUnrealGame(exe)
+          || (!NotGames.Contains(exe) && path is not null && GameFolders.Any(f => path.Contains(f, StringComparison.OrdinalIgnoreCase))) ? Game
         : null;
+
+    // Unreal Engine names its release builds "<Game>-Win64-Shipping.exe", in any store or folder.
+    private static bool IsUnrealGame(string exe) => exe.Contains("-shipping", StringComparison.OrdinalIgnoreCase);
+
+    private static readonly Regex EngineSuffix = new(@"(-Win(32|64))?-Shipping(_\w+)?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    /// <summary>A readable name from an exe's file name: "FortniteClient-Win64-Shipping" → "Fortnite".</summary>
+    public static string CleanName(string file)
+    {
+        var name = EngineSuffix.Replace(file, "");
+        if (name.Length != file.Length && name.Length > 6 && name.EndsWith("Client", StringComparison.OrdinalIgnoreCase)) name = name[..^6];
+        return name.Length > 0 ? char.ToUpperInvariant(name[0]) + name[1..] : file;
+    }
 }
