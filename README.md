@@ -34,6 +34,12 @@ nueva encima: los ajustes se conservan. Para desinstalar, Configuración › Apl
 - **Primer reparto automático:** Discord/TeamSpeak/Mumble → Discord; Spotify, Apple Music, TIDAL… → Música;
   lo instalado en `steamapps\common`, Epic, Riot, Xbox, GOG…, los juegos de Unreal (`…-Shipping.exe`, estén donde
   estén) y Minecraft (Java y Bedrock) → Juego; el resto → Otros. Lo que nunca colocaste se vuelve a repartir al abrirlo.
+- **Normalizar** (el botón del ecualizador junto al silencio del canal): baja en 0,1–0,2 s cada programa del
+  canal que suene demasiado fuerte (un grito en Discord, una explosión) y lo devuelve despacio a su volumen; la
+  etiqueta «−8 dB» junto al programa muestra lo que le está quitando. Solo baja: Windows no deja subir un programa
+  por encima del 100 %, ni separar a cada persona dentro de Discord, ni quitar el ruido de lo que oyes. Para lo
+  que te llega, AMD Noise Suppression (salida) o NVIDIA Broadcast quitan el ruido, y la «Ecualización de
+  sonoridad» de Windows (Sonido › tu salida › Mejoras), si tu driver la trae, iguala lo bajo y lo alto.
 - **Volumen real** = volumen del programa × volumen del canal; silenciado si lo está cualquiera de los dos.
   Si mueves un programa en el mezclador de Windows, SackMix lo toma como el nuevo volumen del programa.
 - **Salidas:** sigue a los programas en **todas** las salidas activas (por si Discord usa otra). Los sonidos del
@@ -55,6 +61,12 @@ Cosas de OBS que conviene saber:
 - OBS busca el programa por una ventana visible: un Discord minimizado a la bandeja no se captura hasta que su
   ventana existe (OBS reintenta solo).
 - Los «Sonidos del sistema» no se envían (no tienen programa ni ventana).
+
+**Mejorar micro** añade al micrófono de OBS (la Captura de entrada de audio predeterminada, o la que se llame
+«mic») cuatro filtros, después de los tuyos: **SackMix · Ruido** (supresión de ruido RNNoise), **· Silencios**
+(expansor: apaga el fondo cuando no hablas), **· Nivel** (compresor: misma voz alta o baja) y **· Tope** (limitador
+a −2 dB: sin saturar). Pulsarlo otra vez solo los repone; tus filtros no se tocan. Se ajustan o quitan en OBS ›
+Filtros del micro.
 
 ## Por qué no hay «dispositivos virtuales»
 

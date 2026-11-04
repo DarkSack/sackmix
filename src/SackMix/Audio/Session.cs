@@ -19,6 +19,7 @@ internal sealed class Session : IAudioSessionEvents
     private Process? _process;
     private bool _closed;
     private volatile float _peak;
+    private float _hold;
 
     public string Id { get; }
     public string DeviceId { get; }
@@ -89,8 +90,13 @@ internal sealed class Session : IAudioSessionEvents
 
     public void ReadPeak()
     {
-        if (!_closed && _meter.GetPeakValue(out var peak) == 0) _peak = peak;
+        if (_closed || _meter.GetPeakValue(out var peak) != 0) return;
+        _peak = peak;
+        if (peak > _hold) _hold = peak;
     }
+
+    /// <summary>The loudest peak since the last call (for normalising: no shout slips between two reads).</summary>
+    public float TakeHold() => Interlocked.Exchange(ref _hold, 0f);
 
     public void Close()
     {

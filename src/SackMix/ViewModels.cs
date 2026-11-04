@@ -90,6 +90,18 @@ internal sealed class ChannelVm : Metered
         }
     }
 
+    /// <summary>Normalise its programs: the loud ones come down to the level of the rest.</summary>
+    public bool Normalize
+    {
+        get => Config.Auto;
+        set
+        {
+            Config.Auto = value;
+            Raise();
+            _main.NormalizeChanged(this);
+        }
+    }
+
     public bool IsDropTarget
     {
         get;
@@ -125,6 +137,22 @@ internal sealed class AppVm(MainVm main, string exe, AppConfig config, ImageSour
     public ImageSource? Icon => icon;
     /// <summary>A program can have several (Chrome's tabs, Discord's processes, two outputs).</summary>
     public List<Session> Sessions { get; } = [];
+    /// <summary>Its normalising gain, used while its channel normalises.</summary>
+    public AutoLevel Level { get; } = new();
+    /// <summary>What normalising takes off right now: 1 = nothing.</summary>
+    public float Gain => Channel.Config.Auto ? Level.Gain : 1f;
+
+    /// <summary>The same, for the row: "−8 dB", or empty when nothing is taken off.</summary>
+    public string Reduction { get; private set; } = "";
+
+    public void ShowReduction()
+    {
+        var gain = Gain;
+        var text = gain >= 0.99f ? "" : $"−{-20 * Math.Log10(gain):0} dB";
+        if (text == Reduction) return;
+        Reduction = text;
+        Raise(nameof(Reduction));
+    }
     public string Name => config.Name.Length > 0 ? config.Name : exe;
     public string Initial => Name[..1].ToUpperInvariant();
 
@@ -173,7 +201,11 @@ internal sealed class MainVm : Observable, IDisposable
     private readonly Dictionary<string, AppVm> _apps = [];
     private readonly DispatcherTimer _save = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(800) };
     private readonly DispatcherTimer _meters = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(33) };
+    // Normalising runs with the window hidden too, ten times a second.
+    private readonly DispatcherTimer _normalize = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(100) };
+    private readonly System.Diagnostics.Stopwatch _sinceNormalize = new();
     private readonly string _path;
+    private bool _visible;
 
     public MainVm(string path)
     {
@@ -182,6 +214,7 @@ internal sealed class MainVm : Observable, IDisposable
         foreach (var c in Mixer.Config.Channels) Channels.Add(new ChannelVm(this, c));
         _save.Tick += (_, _) => Save();
         _meters.Tick += (_, _) => ShowPeaks();
+        _normalize.Tick += (_, _) => Normalize();
 
         var ui = Dispatcher.CurrentDispatcher;
         _engine.DefaultOutputChanged += name => ui.InvokeAsync(() => Output = name ?? "Sin salida de audio");
@@ -189,6 +222,7 @@ internal sealed class MainVm : Observable, IDisposable
         _engine.SessionRemoved += s => ui.InvokeAsync(() => Removed(s));
         _engine.ChangedOutside += (s, v, m) => ui.InvokeAsync(() => ChangedOutside(s, v, m));
         _engine.Start();
+        UpdateTimers();
     }
 
     public Mixer Mixer { get; }
@@ -205,13 +239,49 @@ internal sealed class MainVm : Observable, IDisposable
         }
     } = "Buscando salida…";
 
-    /// <summary>Off while minimised: then nothing reads or draws the meters.</summary>
+    /// <summary>Off while minimised or in the tray: then nothing draws the meters.</summary>
     public bool MetersOn
     {
         set
         {
-            _engine.Meters = value;
-            _meters.IsEnabled = value;
+            _visible = value;
+            UpdateTimers();
+        }
+    }
+
+    /// <summary>
+    /// Windows' meters are read while someone looks at them or a channel normalises; at rest
+    /// (hidden, nothing normalising) the audio thread sleeps.
+    /// </summary>
+    private void UpdateTimers()
+    {
+        var normalizing = Channels.Any(c => c.Config.Auto);
+        _engine.Meters = _visible || normalizing;
+        _meters.IsEnabled = _visible;
+        if (normalizing && !_normalize.IsEnabled) _sinceNormalize.Restart();
+        _normalize.IsEnabled = normalizing;
+    }
+
+    public void NormalizeChanged(ChannelVm channel)
+    {
+        foreach (var app in channel.Apps) app.Level.Reset();
+        Apply(channel);
+        UpdateTimers();
+    }
+
+    private void Normalize()
+    {
+        var seconds = (float)_sinceNormalize.Elapsed.TotalSeconds;
+        _sinceNormalize.Restart();
+        foreach (var channel in Channels)
+        {
+            if (!channel.Config.Auto) continue;
+            foreach (var app in channel.Apps)
+            {
+                float peak = 0;
+                foreach (var s in app.Sessions) peak = Math.Max(peak, s.TakeHold());
+                if (app.Level.Update(peak, seconds)) Send(app);
+            }
         }
     }
 
@@ -237,7 +307,8 @@ internal sealed class MainVm : Observable, IDisposable
     private void ChangedOutside(Session s, float volume, bool muted)
     {
         if (!_apps.TryGetValue(s.Exe, out var app)) return;
-        Mixer.External(app.Config, volume, muted);
+        // What Windows shows includes what normalising took off; the program's own level is without it.
+        Mixer.External(app.Config, volume / app.Gain, muted);
         app.Refresh();
         Apply(app);
     }
@@ -254,9 +325,16 @@ internal sealed class MainVm : Observable, IDisposable
 
     public void Apply(AppVm app)
     {
-        var (volume, muted) = Mixer.Effective(app.Config);
-        foreach (var s in app.Sessions) _engine.SetVolume(s, volume, muted);
+        Send(app);
         Changed();
+    }
+
+    /// <summary>To Windows only: normalising calls this ten times a second and must not rewrite the settings file.</summary>
+    private void Send(AppVm app)
+    {
+        var (volume, muted) = Mixer.Effective(app.Config);
+        foreach (var s in app.Sessions) _engine.SetVolume(s, volume * app.Gain, muted);
+        app.ShowReduction();
     }
 
     public void Apply(ChannelVm channel)
@@ -270,6 +348,7 @@ internal sealed class MainVm : Observable, IDisposable
         if (app.Channel == to) return;
         Mixer.Move(app.Config, to.Config);
         app.Channel.Apps.Remove(app);
+        app.Level.Reset();
         Place(app);
         Apply(app);
     }
@@ -288,9 +367,11 @@ internal sealed class MainVm : Observable, IDisposable
         Channels.Remove(channel);
         foreach (var app in channel.Apps.ToList())
         {
+            app.Level.Reset();
             Place(app);
             Apply(app);
         }
+        UpdateTimers();
         Changed();
     }
 
@@ -310,6 +391,7 @@ internal sealed class MainVm : Observable, IDisposable
             {
                 // Windows meters a session before its volume and mute: scaled here, the meter shows what is heard.
                 var (volume, muted) = Mixer.Effective(app.Config);
+                volume *= app.Gain;
                 double peak = 0;
                 if (!muted)
                     foreach (var s in app.Sessions) peak = Math.Max(peak, s.Peak * volume);
@@ -339,18 +421,34 @@ internal sealed class MainVm : Observable, IDisposable
     }
 
     /// <summary>A sentence for the user saying what happened.</summary>
-    public async Task<string> SendToObsAsync()
+    public Task<string> SendToObsAsync()
     {
         var plan = ObsSync.Plan(Mixer, _apps.Keys.ToHashSet());
-        if (plan.Count == 0) return "Todavía no hay programas en los canales.";
+        if (plan.Count == 0) return Task.FromResult("Todavía no hay programas en los canales.");
+        return WithObsAsync(async (obs, ct) =>
+        {
+            var r = await ObsSync.RunAsync(obs, plan, ct);
+            var done = $"Listo en OBS: {r.Created} {(r.Created == 1 ? "fuente nueva" : "fuentes nuevas")} y {r.Updated} {(r.Updated == 1 ? "actualizada" : "actualizadas")}.";
+            return r.Errors.Count == 0 ? done : done + " " + string.Join(" ", r.Errors);
+        });
+    }
+
+    /// <summary>OBS's own filters on the microphone: noise out, steady level, no clipping.</summary>
+    public Task<string> ImproveMicAsync() => WithObsAsync(async (obs, ct) =>
+    {
+        var r = await ObsMic.RunAsync(obs, ct);
+        return r.Problem ?? $"Micrófono listo en OBS ({string.Join(", ", r.Mics)}): sin ruido de fondo, al mismo nivel y sin picos. Sus filtros se llaman «SackMix · …».";
+    });
+
+    /// <summary>Connects with OBS's own port and password and turns every failure into a sentence.</summary>
+    private static async Task<string> WithObsAsync(Func<ObsClient, CancellationToken, Task<string>> work)
+    {
         try
         {
             var server = ObsServer.Read(ObsServer.DefaultConfigPath);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(8));
             using var obs = await ObsClient.ConnectAsync(new Uri($"ws://127.0.0.1:{server.Port}"), server.Password, timeout.Token);
-            var r = await ObsSync.RunAsync(obs, plan, timeout.Token);
-            var done = $"Listo en OBS: {r.Created} {(r.Created == 1 ? "fuente nueva" : "fuentes nuevas")} y {r.Updated} {(r.Updated == 1 ? "actualizada" : "actualizadas")}.";
-            return r.Errors.Count == 0 ? done : done + " " + string.Join(" ", r.Errors);
+            return await work(obs, timeout.Token);
         }
         catch (ObsException e)
         {
@@ -370,6 +468,7 @@ internal sealed class MainVm : Observable, IDisposable
     public void Dispose()
     {
         _meters.Stop();
+        _normalize.Stop();
         if (_save.IsEnabled) Save();
         _engine.Dispose();
     }

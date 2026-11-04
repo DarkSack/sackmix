@@ -172,6 +172,38 @@
         </Setter>
     </Style>
 
+    <!-- A quiet pill button for the header, the same shape as PillToggle. -->
+    <Style x:Key="PillButton" TargetType="Button">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Foreground" Value="{StaticResource Text}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" CornerRadius="11" BorderThickness="1.5" BorderBrush="{StaticResource Stroke}" Background="#111827"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#18213A" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CFF" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#18213A" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="AddTile" TargetType="Button">
         <Setter Property="Foreground" Value="{StaticResource Dim}" />
         <Setter Property="Cursor" Value="Hand" />
@@ -394,6 +426,40 @@
                 <Setter Property="Background" Value="#2EFF3D6E" />
                 <Setter Property="BorderBrush" Value="{StaticResource Danger}" />
                 <Setter Property="Foreground" Value="#FF9DB5" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Normalise a channel: a square next to Mute, lit in the channel's colour when on. -->
+    <Style x:Key="NormalizeToggle" TargetType="ToggleButton">
+        <Setter Property="Width" Value="44" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="Foreground" Value="{StaticResource Dim}" />
+        <Setter Property="Background" Value="#161E2F" />
+        <Setter Property="BorderBrush" Value="#222C42" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border CornerRadius="12" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                        <TextBlock FontFamily="{StaticResource Icons}" FontSize="15" Text="&#xE9E9;" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#1C263A" />
+                <Setter Property="Foreground" Value="{StaticResource Text}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush" Value="#55FFFFFF" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="Background" Value="{Binding AccentSoft}" />
+                <Setter Property="BorderBrush" Value="{Binding Accent}" />
+                <Setter Property="Foreground" Value="{StaticResource Text}" />
             </Trigger>
         </Style.Triggers>
     </Style>

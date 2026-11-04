@@ -12,6 +12,8 @@ public sealed class ChannelConfig
     public string Color { get; set; } = MixConfig.Palette[0];
     public float Volume { get; set; } = 1f;
     public bool Muted { get; set; }
+    /// <summary>Normalise each of its programs (<see cref="AutoLevel"/>).</summary>
+    public bool Auto { get; set; }
 }
 
 /// <summary>What the user chose for one program, kept by exe name ("discord.exe").</summary>

@@ -61,6 +61,13 @@ public partial class MainWindow : Window
         finally { ObsButton.IsEnabled = true; }
     }
 
+    private async void Mic_Click(object sender, RoutedEventArgs e)
+    {
+        MicButton.IsEnabled = false;
+        try { ShowToast(await _vm.ImproveMicAsync()); }
+        finally { MicButton.IsEnabled = true; }
+    }
+
     private void Startup_Changed(object sender, RoutedEventArgs e)
     {
         var on = StartupToggle.IsChecked == true;
