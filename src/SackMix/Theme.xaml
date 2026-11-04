@@ -28,6 +28,8 @@
 
     <FontFamily x:Key="Display">Bahnschrift</FontFamily>
     <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <!-- Popups (tooltips, menus) inherit their owner's font: an icon button would hand them the icon font, which has no letters. -->
+    <FontFamily x:Key="Body">Segoe UI Variable Text, Segoe UI</FontFamily>
 
     <!-- ── Buttons ─────────────────────────────────────────── -->
 
@@ -519,8 +521,7 @@
     <Style TargetType="ContextMenu">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Foreground" Value="{StaticResource Text}" />
-        <!-- A menu inherits its owner's font: the "⋯" button's is the icon font, which has no letters. -->
-        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+        <Setter Property="FontFamily" Value="{StaticResource Body}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Template">
             <Setter.Value>
@@ -558,6 +559,9 @@
     <Style TargetType="ToolTip">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Foreground" Value="{StaticResource Text}" />
+        <Setter Property="FontFamily" Value="{StaticResource Body}" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToolTip">
