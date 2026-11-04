@@ -217,14 +217,21 @@
                     </StackPanel>
                 </Border>
 
-                <Button x:Name="ObsButton" Grid.Column="3" Style="{StaticResource NeonButton}" Click="Obs_Click" Margin="0,0,14,0"
-                        WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Enviar a OBS"
-                        ToolTip="Crea en OBS una «Captura de audio de aplicación» por programa, con el nombre de su canal">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE714;" VerticalAlignment="Center" />
-                        <TextBlock Margin="8,0,0,0" Text="Enviar a OBS" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ToggleButton x:Name="StartupToggle" Style="{StaticResource PillToggle}" Margin="0,0,10,0"
+                                  WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Iniciar con Windows"
+                                  ToolTip="Al encender el PC, SackMix arranca solo y espera en la bandeja, junto al reloj">
+                        <TextBlock Text="Iniciar con Windows" VerticalAlignment="Center" />
+                    </ToggleButton>
+                    <Button x:Name="ObsButton" Style="{StaticResource NeonButton}" Click="Obs_Click" Margin="0,0,14,0"
+                            WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Enviar a OBS"
+                            ToolTip="Crea en OBS una «Captura de audio de aplicación» por programa, con el nombre de su canal">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE714;" VerticalAlignment="Center" />
+                            <TextBlock Margin="8,0,0,0" Text="Enviar a OBS" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
 
                 <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Style="{StaticResource IconButton}" Content="&#xE921;" Click="Minimize_Click" ToolTip="Minimizar"

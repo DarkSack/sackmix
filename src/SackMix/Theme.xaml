@@ -134,6 +134,42 @@
         </Setter>
     </Style>
 
+    <!-- An on/off pill for the header: dim when off, cyan edge and a lit dot when on. -->
+    <Style x:Key="PillToggle" TargetType="ToggleButton">
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Foreground" Value="{StaticResource Dim}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bd" CornerRadius="11" BorderThickness="1.5" BorderBrush="{StaticResource Stroke}" Background="#111827"
+                            Padding="{TemplateBinding Padding}">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="Dot" Width="8" Height="8" Fill="{StaticResource Faint}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource Text}" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00E5FF" />
+                            <Setter TargetName="Dot" Property="Fill" Value="#00E5FF" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#18213A" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#18213A" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="AddTile" TargetType="Button">
         <Setter Property="Foreground" Value="{StaticResource Dim}" />
         <Setter Property="Cursor" Value="Hand" />

@@ -23,6 +23,9 @@ public partial class MainWindow : Window
         _vm = vm;
         DataContext = vm;
         InitializeComponent();
+        SyncStartup();
+        // The installer or Task Manager may have changed it while the window was in the tray.
+        IsVisibleChanged += (_, _) => { if (IsVisible) SyncStartup(); };
         _toast.Tick += (_, _) =>
         {
             _toast.Stop();
@@ -56,6 +59,32 @@ public partial class MainWindow : Window
         ObsButton.IsEnabled = false;
         try { ShowToast(await _vm.SendToObsAsync()); }
         finally { ObsButton.IsEnabled = true; }
+    }
+
+    private void Startup_Changed(object sender, RoutedEventArgs e)
+    {
+        var on = StartupToggle.IsChecked == true;
+        try
+        {
+            Autostart.Set(on);
+            ShowToast(on ? "SackMix arrancará con Windows, en la bandeja." : "SackMix ya no arrancará con Windows.");
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
+        {
+            Log.Error("autostart", ex);
+            ShowToast("No pude cambiar el inicio con Windows: " + ex.Message);
+            SyncStartup();
+        }
+    }
+
+    /// <summary>Shows what Windows really has, without writing it back.</summary>
+    private void SyncStartup()
+    {
+        StartupToggle.Checked -= Startup_Changed;
+        StartupToggle.Unchecked -= Startup_Changed;
+        StartupToggle.IsChecked = Autostart.IsOn();
+        StartupToggle.Checked += Startup_Changed;
+        StartupToggle.Unchecked += Startup_Changed;
     }
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;

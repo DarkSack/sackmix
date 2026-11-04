@@ -24,6 +24,9 @@ nueva encima: los ajustes se conservan. Para desinstalar, Configuración › Apl
 - **Bandeja:** cerrar la ventana deja SackMix funcionando junto al reloj (los volúmenes siguen aplicándose).
   Clic en el icono para abrirlo; clic derecho › Salir para cerrarlo del todo. Al salir, cada programa se queda
   en Windows con el último volumen que tenía.
+- **Iniciar con Windows:** el interruptor de la cabecera. Encendido, SackMix arranca solo al encender el PC y
+  espera en la bandeja (es el mismo ajuste que marca el instalador y que se ve en Administrador de tareas ›
+  Aplicaciones de arranque).
 - **Canales:** el nombre se edita encima; el punto de color lo cambia; «⋯» cambia el color o borra el canal
   (sus programas pasan a «Otros», que no se puede borrar y recoge todo lo que nadie colocó). «Nuevo canal» crea otro.
 - **Mover un programa:** arrástralo por su icono o su nombre a otro canal, o clic derecho → «Mover a…»
