@@ -483,6 +483,8 @@
     <Style TargetType="ContextMenu">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Foreground" Value="{StaticResource Text}" />
+        <!-- A menu inherits its owner's font: the "⋯" button's is the icon font, which has no letters. -->
+        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Template">
             <Setter.Value>
