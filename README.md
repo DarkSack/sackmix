@@ -11,7 +11,9 @@ silencio. Con un botón, cada canal aparece en **OBS** como una fuente de audio 
 
 SackMix es **gratis**. Funciona en Windows 10 y 11 (64 bits) y no necesita .NET instalado.
 
-Ejecuta `SackMix-Setup-<versión>.exe` (ver [Desarrollo](#desarrollo)). El asistente muestra las condiciones de uso y
+**[Descarga el instalador](https://github.com/DarkSack/sackmix/releases/latest)** (`SackMix-Setup-<versión>.exe`, en
+*Assets*) y ábrelo. No está firmado: si Windows muestra «Windows protegió su PC», pulsa **Más información › Ejecutar de
+todas formas**. El asistente muestra las condiciones de uso y
 privacidad, que hay que aceptar, y permite elegir la carpeta y marcar el acceso en el escritorio y el inicio con
 Windows (arranca oculto en la bandeja). No pide permisos de administrador. Para actualizar, se instala la versión
 nueva encima: los ajustes se conservan. Para desinstalar, Configuración › Aplicaciones.
