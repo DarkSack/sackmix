@@ -8,6 +8,8 @@
     <!-- WPF reads DPI awareness from app.manifest; WinForms is only the tray icon. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
     <RootNamespace>SackMix</RootNamespace>
+    <!-- Audio/AudioPolicy.cs calls an undocumented WinRT factory through its vtable. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>SackMix</AssemblyName>
     <AssemblyTitle>SackMix</AssemblyTitle>
     <ApplicationManifest>app.manifest</ApplicationManifest>

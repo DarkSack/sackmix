@@ -14,6 +14,10 @@ public sealed class ChannelConfig
     public bool Muted { get; set; }
     /// <summary>Normalise each of its programs (<see cref="AutoLevel"/>).</summary>
     public bool Auto { get; set; }
+    /// <summary>Output its programs play on (Windows' MMDevice id); null = Windows' own output.</summary>
+    public string? Device { get; set; }
+    /// <summary>That output's name, to show it while it is unplugged.</summary>
+    public string? DeviceName { get; set; }
 }
 
 /// <summary>What the user chose for one program, kept by exe name ("discord.exe").</summary>
@@ -25,6 +29,8 @@ public sealed class AppConfig
     public string Name { get; set; } = "";
     public float Volume { get; set; } = 1f;
     public bool Muted { get; set; }
+    /// <summary>SackMix sent it to an output: Windows remembers that, so it is undone when its channel goes back to Windows' output.</summary>
+    public bool Routed { get; set; }
 }
 
 public sealed class MixConfig

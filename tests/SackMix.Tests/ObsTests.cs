@@ -36,26 +36,43 @@ public class ObsTests
     }
 
     [Fact]
-    public void PlanNamesSourcesAfterTheirChannel()
+    public void PlanSendsTheProgramsPlacedInAChannel()
     {
         var m = new Mixer(MixConfig.Defaults());
         m.App("discord.exe", null, "Discord", 1, false);
         m.App("spotify.exe", null, "Spotify", 1, false);
         m.App("tidal.exe", null, "TIDAL", 1, false);
-        m.App("chrome.exe", null, "Google Chrome", 1, false);   // unplaced and running: goes to Otros
-        m.App("notepad.exe", null, "Bloc de notas", 1, false);  // unplaced and closed: left out
+        m.App("chrome.exe", null, "Google Chrome", 1, false);   // unplaced: Otros, not sent
+        m.App("obs64.exe", null, "OBS Studio", 1, false);
+        Mixer.Move(m.Config.Apps["obs64.exe"], m.Config.Channels[0]); // never OBS itself
         m.App(Mixer.SystemSounds, null, "Sonidos del sistema", 1, false);
 
-        var plan = ObsSync.Plan(m, new HashSet<string> { "chrome.exe", "discord.exe", Mixer.SystemSounds });
+        var plan = ObsSync.Plan(m);
 
-        Assert.Equal(
-            ["Discord", "Música · Spotify", "Música · TIDAL", "Otros"],
-            plan.Select(p => p.InputName));
-        Assert.Equal("chrome.exe", plan[^1].Exe);
+        Assert.Equal(["Discord", "Spotify", "TIDAL"], plan.Select(p => p.InputName));
+        Assert.Equal("Música", plan[1].Channel);
     }
 
     [Fact]
-    public async Task SyncCreatesMissingSourcesAndUpdatesOurs()
+    public void ReadsTheProgramOfAWindowSetting()
+    {
+        Assert.Equal("discord.exe", ObsSync.ExeOf("Discord:Chrome_WidgetWin_1:Discord.exe"));
+        Assert.Equal("fortniteclient-win64-shipping.exe", ObsSync.ExeOf("Fortnite  :UnrealWindow:FortniteClient-Win64-Shipping.exe"));
+        Assert.Equal("a:b.exe", ObsSync.ExeOf(ObsSync.Window("x", "", "a:b.exe")));
+        Assert.Null(ObsSync.ExeOf(""));
+    }
+
+    [Fact]
+    public void NewProgramsGoNextToTheirChannel()
+    {
+        string[] scenes = ["02 GAMEPLAY", "[AUD] Voz", "[AUD] Juego", "[AUD] Musica"];
+        Assert.Equal("[AUD] Voz", ObsSync.SceneFor("Discord", ["[AUD] Voz"], scenes, "02 GAMEPLAY"));
+        Assert.Equal("[AUD] Musica", ObsSync.SceneFor("Música", [], scenes, "02 GAMEPLAY"));
+        Assert.Equal("02 GAMEPLAY", ObsSync.SceneFor("Chat", [], scenes, "02 GAMEPLAY"));
+    }
+
+    [Fact]
+    public async Task SyncKeepsWhatOBSCapturesAndAddsTheRest()
     {
         var port = FreePort();
         using var listener = new HttpListener();
@@ -68,25 +85,28 @@ public class ObsTests
         using (var obs = await ObsClient.ConnectAsync(new Uri($"ws://localhost:{port}/"), "pw", cts.Token))
         {
             var r = await ObsSync.RunAsync(obs, [
-                new("Discord", "discord.exe", "Discord"),
-                new("Música", "spotify.exe", "Spotify"),
-                new("Juego", "javaw.exe", "Minecraft (Java)"),
+                new("Discord", "discord.exe", "Discord", "Discord"),
+                new("Brave", "brave.exe", "Brave", "Música"),
+                new("Spotify", "spotify.exe", "Spotify", "Música"),
+                new("Minecraft (Java)", "javaw.exe", "Minecraft (Java)", "Juego"),
             ], cts.Token);
 
             Assert.Equal(1, r.Created);
-            Assert.Equal(1, r.Updated);
-            Assert.Contains("«Juego»", Assert.Single(r.Errors));
+            Assert.Equal(2, r.Kept);
+            Assert.Contains("«Minecraft (Java)»", Assert.Single(r.Errors));
         }
         await server;
 
         var create = requests.Single(q => (string?)q["requestType"] == "CreateInput")["requestData"]!;
-        Assert.Equal("Escena", (string?)create["sceneName"]);
-        Assert.Equal("Música", (string?)create["inputName"]);
+        Assert.Equal("[AUD] Musica", (string?)create["sceneName"]); // next to Brave, the other program of Música
+        Assert.Equal("Spotify", (string?)create["inputName"]);
         Assert.Equal(ObsSync.Kind, (string?)create["inputKind"]);
         Assert.Equal("Spotify::spotify.exe", (string?)create["inputSettings"]!["window"]);
         Assert.Equal(2, (int?)create["inputSettings"]!["priority"]);
-        var update = requests.Single(q => (string?)q["requestType"] == "SetInputSettings")["requestData"]!;
-        Assert.Equal("Discord", (string?)update["inputName"]);
+        Assert.DoesNotContain(requests, q => (string?)q["requestType"] == "SetInputSettings");
+        // The old «Mejorar micro» filters go; the user's own filter stays.
+        Assert.Equal(["SackMix · Ruido", "SackMix · Tope"],
+            requests.Where(q => (string?)q["requestType"] == "RemoveSourceFilter").Select(q => (string?)q["requestData"]!["filterName"]));
     }
 
     [Fact]
@@ -130,8 +150,28 @@ public class ObsTests
             {
                 "GetCurrentProgramScene" => new JsonObject { ["sceneName"] = "Escena" },
                 "GetInputList" => new JsonObject { ["inputs"] = new JsonArray(
-                    new JsonObject { ["inputName"] = "Discord", ["inputKind"] = ObsSync.Kind },
-                    new JsonObject { ["inputName"] = "Juego", ["inputKind"] = "image_source" }) },
+                    new JsonObject { ["inputName"] = "Voz Discord", ["inputKind"] = ObsSync.Kind },
+                    new JsonObject { ["inputName"] = "Musica Navegador", ["inputKind"] = ObsSync.Kind },
+                    new JsonObject { ["inputName"] = "Minecraft (Java)", ["inputKind"] = "image_source" },
+                    new JsonObject { ["inputName"] = "Mic", ["inputKind"] = "wasapi_input_capture" }) },
+                "GetInputSettings" => new JsonObject { ["inputSettings"] = new JsonObject
+                {
+                    ["window"] = (string?)d["requestData"]!["inputName"] == "Voz Discord" ? "Discord:Chrome_WidgetWin_1:Discord.exe" : "Brave:Chrome_WidgetWin_1:brave.exe",
+                } },
+                "GetSceneList" => new JsonObject { ["scenes"] = new JsonArray(
+                    new JsonObject { ["sceneName"] = "Escena" },
+                    new JsonObject { ["sceneName"] = "[AUD] Voz" },
+                    new JsonObject { ["sceneName"] = "[AUD] Musica" }) },
+                "GetSceneItemList" => new JsonObject { ["sceneItems"] = (string?)d["requestData"]!["sceneName"] switch
+                {
+                    "[AUD] Voz" => new JsonArray(new JsonObject { ["sourceName"] = "Voz Discord" }, new JsonObject { ["sourceName"] = "Mic" }),
+                    "[AUD] Musica" => new JsonArray(new JsonObject { ["sourceName"] = "Musica Navegador" }),
+                    _ => new JsonArray(new JsonObject { ["sourceName"] = "[AUD] Voz" }),
+                } },
+                "GetSourceFilterList" => new JsonObject { ["filters"] = new JsonArray(
+                    new JsonObject { ["filterName"] = "SackMix · Ruido" },
+                    new JsonObject { ["filterName"] = "Mi compresor" },
+                    new JsonObject { ["filterName"] = "SackMix · Tope" }) },
                 _ => null,
             };
             await Send(ws, new JsonObject { ["op"] = 7, ["d"] = new JsonObject

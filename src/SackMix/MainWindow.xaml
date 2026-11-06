@@ -102,10 +102,24 @@
                                  ToolTip="Nombre del canal: así se llama su fuente en OBS" AutomationProperties.Name="Nombre del canal" />
                     </DockPanel>
 
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
-                        <TextBlock x:Name="Percent" Text="{Binding Volume, StringFormat={}{0:0}}" FontFamily="{StaticResource Display}"
-                                   FontSize="36" FontWeight="SemiBold" />
-                        <TextBlock Text="%" Foreground="{StaticResource Dim}" FontSize="14" VerticalAlignment="Bottom" Margin="3,0,0,8" />
+                    <StackPanel Grid.Row="1" Margin="0,6,0,0">
+                        <TextBlock x:Name="OutputLabel" Text="{Binding Output}" Foreground="{StaticResource Dim}" FontSize="11.5" HorizontalAlignment="Center"
+                                   Margin="12,0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Output}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                            <TextBlock x:Name="Percent" Text="{Binding Volume, StringFormat={}{0:0}}" FontFamily="{StaticResource Display}"
+                                       FontSize="36" FontWeight="SemiBold" />
+                            <TextBlock Text="%" Foreground="{StaticResource Dim}" FontSize="14" VerticalAlignment="Bottom" Margin="3,0,0,8" />
+                        </StackPanel>
                     </StackPanel>
 
                     <Grid x:Name="FaderArea" Grid.Row="2" HorizontalAlignment="Center" Margin="0,8,0,10">
@@ -237,17 +251,20 @@
                                   ToolTip="Al encender el PC, SackMix arranca solo y espera en la bandeja, junto al reloj">
                         <TextBlock Text="Iniciar con Windows" VerticalAlignment="Center" />
                     </ToggleButton>
-                    <Button x:Name="MicButton" Style="{StaticResource PillButton}" Click="Mic_Click" Margin="0,0,10,0"
-                            WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Mejorar micro en OBS"
-                            ToolTip="Pone en tu micrófono de OBS sus filtros de voz: quita el ruido de fondo, calla la sala entre palabras, iguala el volumen y evita los picos. Vuelve a pulsarlo cuando quieras: no duplica nada ni toca tus otros filtros">
+                    <Button x:Name="MonitorButton" Style="{StaticResource PillButton}" Click="Monitor_Click" Margin="0,0,10,0"
+                            WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Escuchar OBS en"
+                            ToolTip="Por qué altavoz o audífonos te deja escuchar OBS las fuentes que monitorizas (OBS tiene que estar cerrado)">
+                        <Button.ContextMenu>
+                            <ContextMenu />
+                        </Button.ContextMenu>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE720;" VerticalAlignment="Center" />
-                            <TextBlock Margin="8,0,0,0" Text="Mejorar micro" VerticalAlignment="Center" />
+                            <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE7F6;" VerticalAlignment="Center" />
+                            <TextBlock Margin="8,0,0,0" Text="Escuchar OBS en…" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                     <Button x:Name="ObsButton" Style="{StaticResource NeonButton}" Click="Obs_Click" Margin="0,0,14,0"
                             WindowChrome.IsHitTestVisibleInChrome="True" AutomationProperties.Name="Enviar a OBS"
-                            ToolTip="Crea en OBS una «Captura de audio de aplicación» por programa, con el nombre de su canal">
+                            ToolTip="Crea en OBS una «Captura de audio de aplicación» por programa, con su nombre: cada sonido con su propio fader">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE714;" VerticalAlignment="Center" />
                             <TextBlock Margin="8,0,0,0" Text="Enviar a OBS" VerticalAlignment="Center" />

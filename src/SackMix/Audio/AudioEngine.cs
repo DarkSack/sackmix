@@ -30,6 +30,8 @@ internal sealed class AudioEngine : IDisposable
 
     /// <summary>Name of Windows' default output, or null when there is none.</summary>
     public event Action<string?>? DefaultOutputChanged;
+    /// <summary>The active outputs (id, name), whenever they change.</summary>
+    public event Action<IReadOnlyList<(string Id, string Name)>>? OutputsChanged;
     public event Action<Session>? SessionAdded;
     public event Action<Session>? SessionRemoved;
     /// <summary>Someone else (Windows' mixer, the program itself) changed a session's level or mute.</summary>
@@ -114,6 +116,7 @@ internal sealed class AudioEngine : IDisposable
             if (!_outputs.ContainsKey(id)) OpenOutput(id, device);
 
         DefaultOutputChanged?.Invoke(hasMain ? FriendlyName(main) : null);
+        OutputsChanged?.Invoke(active.Select(kv => (kv.Key, FriendlyName(kv.Value) ?? kv.Key)).OrderBy(o => o.Item2, StringComparer.CurrentCultureIgnoreCase).ToList());
     }
 
     private void OpenOutput(string id, IMMDevice device)

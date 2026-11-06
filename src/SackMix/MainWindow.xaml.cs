@@ -61,11 +61,22 @@ public partial class MainWindow : Window
         finally { ObsButton.IsEnabled = true; }
     }
 
-    private async void Mic_Click(object sender, RoutedEventArgs e)
+    private void Monitor_Click(object sender, RoutedEventArgs e)
     {
-        MicButton.IsEnabled = false;
-        try { ShowToast(await _vm.ImproveMicAsync()); }
-        finally { MicButton.IsEnabled = true; }
+        var menu = MonitorButton.ContextMenu!;
+        menu.Items.Clear();
+        var current = MainVm.ObsMonitorDevice();
+        if (current is null)
+        {
+            ShowToast("No encontré tu perfil de OBS.");
+            return;
+        }
+        menu.Items.Add(Choice("La salida de Windows", current == "default", () => ShowToast(MainVm.SetObsMonitor("default", "Default"))));
+        foreach (var (id, name) in _vm.Outputs)
+            menu.Items.Add(Choice(name, current == id, () => ShowToast(MainVm.SetObsMonitor(id, name))));
+        menu.PlacementTarget = MonitorButton;
+        menu.Placement = PlacementMode.Bottom;
+        menu.IsOpen = true;
     }
 
     private void Startup_Changed(object sender, RoutedEventArgs e)
@@ -138,6 +149,13 @@ public partial class MainWindow : Window
         var menu = button.ContextMenu!;
         menu.Items.Clear();
         menu.Items.Add(Item("Cambiar color", () => _vm.NextColor(channel)));
+        var output = new MenuItem { Header = "Sonar por" };
+        output.Items.Add(Choice("La salida de Windows", channel.Config.Device is null, () => _vm.SetOutput(channel, null, null)));
+        foreach (var (id, name) in _vm.Outputs)
+            output.Items.Add(Choice(name, channel.Config.Device == id, () => _vm.SetOutput(channel, id, name)));
+        if (channel.Config.Device is { } saved && _vm.Outputs.All(o => o.Id != saved))
+            output.Items.Add(new MenuItem { Header = $"{channel.Config.DeviceName} (desconectada)", IsChecked = true, IsEnabled = false });
+        menu.Items.Add(output);
         var remove = Item("Eliminar canal", () => _vm.RemoveChannel(channel));
         // The last channel takes the programs nobody placed.
         remove.IsEnabled = !channel.IsCatchAll;
@@ -217,6 +235,13 @@ public partial class MainWindow : Window
     {
         var item = new MenuItem { Header = header };
         item.Click += (_, _) => action();
+        return item;
+    }
+
+    private static MenuItem Choice(string header, bool chosen, Action action)
+    {
+        var item = Item(header, action);
+        item.IsChecked = chosen;
         return item;
     }
 

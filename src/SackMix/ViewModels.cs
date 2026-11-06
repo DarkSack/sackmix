@@ -102,6 +102,11 @@ internal sealed class ChannelVm : Metered
         }
     }
 
+    /// <summary>The output its programs play on, under its name; empty while it follows Windows.</summary>
+    public string Output => Config.Device is null ? "" : Config.DeviceName ?? "Otra salida";
+
+    public void OutputChanged() => Raise(nameof(Output));
+
     public bool IsDropTarget
     {
         get;
@@ -205,6 +210,8 @@ internal sealed class MainVm : Observable, IDisposable
     private readonly DispatcherTimer _normalize = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(100) };
     private readonly System.Diagnostics.Stopwatch _sinceNormalize = new();
     private readonly string _path;
+    // Output each process was last sent to by us ("" = Windows' own), so it is not sent again.
+    private readonly Dictionary<int, string> _routed = [];
     private bool _visible;
 
     public MainVm(string path)
@@ -218,6 +225,7 @@ internal sealed class MainVm : Observable, IDisposable
 
         var ui = Dispatcher.CurrentDispatcher;
         _engine.DefaultOutputChanged += name => ui.InvokeAsync(() => Output = name ?? "Sin salida de audio");
+        _engine.OutputsChanged += list => ui.InvokeAsync(() => Outputs = list);
         _engine.SessionAdded += s => ui.InvokeAsync(() => Added(s));
         _engine.SessionRemoved += s => ui.InvokeAsync(() => Removed(s));
         _engine.ChangedOutside += (s, v, m) => ui.InvokeAsync(() => ChangedOutside(s, v, m));
@@ -238,6 +246,9 @@ internal sealed class MainVm : Observable, IDisposable
             Raise();
         }
     } = "Buscando salida…";
+
+    /// <summary>The outputs that are on now (id, name), for the menus.</summary>
+    public IReadOnlyList<(string Id, string Name)> Outputs { get; private set; } = [];
 
     /// <summary>Off while minimised or in the tray: then nothing draws the meters.</summary>
     public bool MetersOn
@@ -295,11 +306,14 @@ internal sealed class MainVm : Observable, IDisposable
         }
         app.Sessions.Add(s);
         Apply(app);
+        Route(app);
     }
 
     private void Removed(Session s)
     {
-        if (!_apps.TryGetValue(s.Exe, out var app) || !app.Sessions.Remove(s) || app.Sessions.Count > 0) return;
+        if (!_apps.TryGetValue(s.Exe, out var app) || !app.Sessions.Remove(s)) return;
+        if (app.Sessions.All(o => o.Pid != s.Pid)) _routed.Remove(s.Pid);
+        if (app.Sessions.Count > 0) return;
         _apps.Remove(s.Exe);
         app.Channel.Apps.Remove(app);
     }
@@ -351,6 +365,39 @@ internal sealed class MainVm : Observable, IDisposable
         app.Level.Reset();
         Place(app);
         Apply(app);
+        Route(app);
+    }
+
+    /// <summary>The channel's programs play on this output from now on (null = Windows' own).</summary>
+    public void SetOutput(ChannelVm channel, string? id, string? name)
+    {
+        channel.Config.Device = id;
+        channel.Config.DeviceName = id is null ? null : name;
+        channel.OutputChanged();
+        foreach (var app in channel.Apps) Route(app);
+        Changed();
+    }
+
+    /// <summary>
+    /// Tells Windows which output the program plays on: its channel's, or Windows' own again if
+    /// we had moved it. Programs we never moved keep what the user chose in Windows' settings.
+    /// </summary>
+    private void Route(AppVm app)
+    {
+        if (app.Exe == Mixer.SystemSounds) return;
+        var device = app.Channel.Config.Device;
+        if (device is null && !app.Config.Routed) return;
+        var ok = false;
+        foreach (var pid in app.Sessions.Select(s => s.Pid).Distinct())
+        {
+            if (_routed.TryGetValue(pid, out var sent) && sent == (device ?? "")) { ok = true; continue; }
+            if (!AudioPolicy.Set(pid, device)) continue;
+            _routed[pid] = device ?? "";
+            ok = true;
+        }
+        if (!ok || app.Config.Routed == (device is not null)) return;
+        app.Config.Routed = device is not null;
+        Changed();
     }
 
     public ChannelVm AddChannel()
@@ -370,6 +417,7 @@ internal sealed class MainVm : Observable, IDisposable
             app.Level.Reset();
             Place(app);
             Apply(app);
+            Route(app);
         }
         UpdateTimers();
         Changed();
@@ -450,22 +498,43 @@ internal sealed class MainVm : Observable, IDisposable
     /// <summary>A sentence for the user saying what happened.</summary>
     public Task<string> SendToObsAsync()
     {
-        var plan = ObsSync.Plan(Mixer, _apps.Keys.ToHashSet());
-        if (plan.Count == 0) return Task.FromResult("Todavía no hay programas en los canales.");
+        var plan = ObsSync.Plan(Mixer);
+        if (plan.Count == 0) return Task.FromResult("Todavía no hay programas en los canales (los de «" + Mixer.CatchAll.Name + "» no se envían).");
         return WithObsAsync(async (obs, ct) =>
         {
             var r = await ObsSync.RunAsync(obs, plan, ct);
-            var done = $"Listo en OBS: {r.Created} {(r.Created == 1 ? "fuente nueva" : "fuentes nuevas")} y {r.Updated} {(r.Updated == 1 ? "actualizada" : "actualizadas")}.";
+            var done = $"Listo en OBS: {r.Created} {(r.Created == 1 ? "fuente nueva" : "fuentes nuevas")}; {r.Kept} {(r.Kept == 1 ? "programa ya tenía" : "programas ya tenían")} la suya.";
             return r.Errors.Count == 0 ? done : done + " " + string.Join(" ", r.Errors);
         });
     }
 
-    /// <summary>OBS's own filters on the microphone: noise out, steady level, no clipping.</summary>
-    public Task<string> ImproveMicAsync() => WithObsAsync(async (obs, ct) =>
+    /// <summary>The output OBS monitors on now ("default" = Windows' own), or null when OBS has no profile.</summary>
+    public static string? ObsMonitorDevice()
     {
-        var r = await ObsMic.RunAsync(obs, ct);
-        return r.Problem ?? $"Micrófono listo en OBS ({string.Join(", ", r.Mics)}): sin ruido de fondo, al mismo nivel y sin picos. Sus filtros se llaman «SackMix · …».";
-    });
+        try { return ObsMonitor.Current(ObsMonitor.ProfileFile(ObsMonitor.DefaultFolder)); }
+        catch (Exception e) when (e is ObsException or IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    /// <summary>Where OBS plays what it monitors. A sentence for the user saying what happened.</summary>
+    public static string SetObsMonitor(string id, string name)
+    {
+        // OBS rewrites its profile when it closes and would put the old output back.
+        if (System.Diagnostics.Process.GetProcessesByName("obs64").Length > 0 || System.Diagnostics.Process.GetProcessesByName("obs32").Length > 0)
+            return "Cierra OBS y vuelve a elegir: OBS guarda sus ajustes al salir y borraría el cambio.";
+        try
+        {
+            ObsMonitor.Set(ObsMonitor.ProfileFile(ObsMonitor.DefaultFolder), id, name);
+            return id == "default"
+                ? "OBS escuchará lo que monitorees por la salida de Windows."
+                : $"OBS escuchará lo que monitorees por {name}. Qué fuentes se escuchan: en OBS, Propiedades de audio avanzadas › Monitorización.";
+        }
+        catch (ObsException e) { return e.Message; }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Log.Error("obs monitor", e);
+            return "No pude cambiar el perfil de OBS: " + e.Message;
+        }
+    }
 
     /// <summary>Connects with OBS's own port and password and turns every failure into a sentence.</summary>
     private static async Task<string> WithObsAsync(Func<ObsClient, CancellationToken, Task<string>> work)

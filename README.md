@@ -48,29 +48,37 @@ nueva encima: los ajustes se conservan. Para desinstalar, Configuración › Apl
   SackMix y este pone la mezcla guardada para ese espacio (volumen, silencio y «Normalizar» de cada canal). Para
   guardarla, deja los canales como quieras y en el menú de la bandeja elige «Guardar esta mezcla para «Espacio»»;
   «Olvidar…» la quita. Un espacio sin mezcla guardada no cambia nada. El aviso va por una tubería local de tu usuario.
+- **Sonar por** (menú «⋯» del canal): manda los programas del canal a un altavoz o audífonos concretos, por ejemplo
+  Discord a los audífonos y la música a los altavoces. Es la misma preferencia por programa que Windows tiene en
+  Configuración › Sonido › Mezclador de volumen, y la aplica al momento; «La salida de Windows» la quita. Un programa
+  que nunca moviste conserva lo que elegiste en Windows. Debajo del nombre del canal se ve su salida.
 - **Ajustes:** `%LOCALAPPDATA%\SackMix\config.json` (se guarda 0,8 s después del último cambio). Errores en `sackmix.log`.
 
 ## OBS
 
-«Enviar a OBS» crea en la escena actual una **Captura de audio de aplicación** (la de OBS 28+) por programa,
-con el nombre del canal: «Discord», o «Música · Spotify» si el canal tiene varios. Si ya existen, solo las
-vuelve a apuntar al programa. No pide nada: lee el puerto y la contraseña del propio OBS
+«Enviar a OBS» da a **cada programa de tus canales su propia Captura de audio de aplicación** (la de OBS 28+),
+con su nombre («Discord», «Spotify»): cada sonido tiene su fader en OBS. Lo que OBS ya captura, se llame como se
+llame tu fuente, se deja como está (nada se duplica). Una fuente nueva va a la escena donde están los otros programas
+de su canal, o a una escena llamada como el canal («[AUD] Música»), o a la escena actual. Los programas del último
+canal («Otros») y el propio OBS no se envían: arrastra a un canal lo que quieras en OBS. No pide nada: lee el puerto y
+la contraseña del propio OBS
 (`%APPDATA%\obs-studio\plugin_config\obs-websocket\config.json`). OBS tiene que estar abierto, con el servidor
-WebSocket activado (Herramientas → Ajustes del servidor WebSocket).
+WebSocket activado (Herramientas → Ajustes del servidor WebSocket). También quita los filtros «SackMix · …» que el
+antiguo botón «Mejorar micro» (hasta la 0.3.0) puso en el micrófono; tus filtros no se tocan.
+
+**Escuchar OBS en…** elige por qué altavoz o audífonos te deja escuchar OBS las fuentes que monitorizas (OBS ›
+Ajustes › Audio › Avanzado › Dispositivo de monitorización). Se escribe en tu perfil de OBS, así que OBS tiene que
+estar cerrado. Qué fuentes se escuchan se elige en OBS, en Propiedades de audio avanzadas › Monitorización; las
+capturas de programas conviene dejarlas sin monitorizar, porque ese sonido ya lo oyes.
 
 Cosas de OBS que conviene saber:
 
 - La captura sigue al volumen por programa de Windows: lo que silencias en SackMix también se silencia en OBS.
-  Para el directo, cada fuente tiene además su propio fader dentro de OBS.
+- Si tienes activado el «Audio del escritorio» de OBS, captura otra vez todo lo que suena: con una fuente por
+  programa, desactívalo (o silencialo) para no oír cada cosa dos veces en el directo.
 - OBS busca el programa por una ventana visible: un Discord minimizado a la bandeja no se captura hasta que su
   ventana existe (OBS reintenta solo).
 - Los «Sonidos del sistema» no se envían (no tienen programa ni ventana).
-
-**Mejorar micro** añade al micrófono de OBS (la Captura de entrada de audio predeterminada, o la que se llame
-«mic») cuatro filtros, después de los tuyos: **SackMix · Ruido** (supresión de ruido RNNoise), **· Silencios**
-(expansor: apaga el fondo cuando no hablas), **· Nivel** (compresor: misma voz alta o baja) y **· Tope** (limitador
-a −2 dB: sin saturar). Pulsarlo otra vez solo los repone; tus filtros no se tocan. Se ajustan o quitan en OBS ›
-Filtros del micro.
 
 ## Por qué no hay «dispositivos virtuales»
 
