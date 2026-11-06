@@ -1,4 +1,5 @@
 using System.Windows;
+using SackMix.Core;
 using Forms = System.Windows.Forms;
 
 namespace SackMix;
@@ -9,11 +10,29 @@ internal sealed class Tray : IDisposable
     private readonly Forms.NotifyIcon _icon;
     private bool _told;
 
-    public Tray(Action open, Action exit)
+    public Tray(Action open, Action exit, MainVm vm)
     {
         using var stream = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/sackmix.ico"))!.Stream;
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Abrir SackMix", null, (_, _) => open());
+        // Profiles follow SackSpace's workspaces: the menu offers the one it asked for last.
+        var save = new Forms.ToolStripMenuItem();
+        var forget = new Forms.ToolStripMenuItem();
+        save.Click += (_, _) => { if (vm.RequestedProfile is { } p) vm.SaveProfile(p); };
+        forget.Click += (_, _) => { if (vm.RequestedProfile is { } p) vm.ForgetProfile(p); };
+        menu.Items.Add(new Forms.ToolStripSeparator());
+        menu.Items.Add(save);
+        menu.Items.Add(forget);
+        menu.Items.Add(new Forms.ToolStripSeparator());
+        menu.Opening += (_, _) =>
+        {
+            var p = vm.RequestedProfile;
+            var has = p is not null && Profiles.Has(vm.Mixer.Config, p);
+            save.Text = p is null ? "Perfiles: SackSpace los pide al cambiar de espacio" : $"Guardar esta mezcla para «{p}»";
+            save.Enabled = p is not null;
+            forget.Text = $"Olvidar la mezcla de «{p}»";
+            forget.Visible = has;
+        };
         menu.Items.Add("Salir", null, (_, _) => exit());
         _icon = new Forms.NotifyIcon
         {

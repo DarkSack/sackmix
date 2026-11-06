@@ -14,6 +14,7 @@ public partial class App : Application
     private EventWaitHandle? _show;
     private MainVm? _vm;
     private Tray? _tray;
+    private ControlPipe? _pipe;
     private bool _exiting;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -38,7 +39,8 @@ public partial class App : Application
             _vm = new MainVm(ConfigStore.DefaultPath);
             var window = new MainWindow(_vm);
             MainWindow = window;
-            _tray = new Tray(ShowMain, Quit);
+            _tray = new Tray(ShowMain, Quit, _vm);
+            _pipe = new ControlPipe(_vm.ApplyProfile);
             // Closing the window leaves the mixer running in the tray; Salir (or Windows shutting down) quits.
             window.Closing += (_, args) =>
             {
@@ -82,6 +84,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _pipe?.Dispose();
         _tray?.Dispose();
         _vm?.Dispose();
         _show?.Dispose();

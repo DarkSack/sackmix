@@ -413,6 +413,33 @@ internal sealed class MainVm : Observable, IDisposable
         _save.Start();
     }
 
+    /// <summary>The last profile SackSpace asked for (its workspace's name), for the tray menu.</summary>
+    public string? RequestedProfile { get; private set; }
+
+    /// <summary>SackSpace changed workspace: its saved mix, if there is one, goes on.</summary>
+    public void ApplyProfile(string name)
+    {
+        RequestedProfile = name;
+        foreach (var (config, level) in Profiles.Levels(Mixer.Config, name))
+        {
+            if (Channels.FirstOrDefault(c => c.Config == config) is not { } channel) continue;
+            channel.Volume = level.Volume * 100;
+            channel.Muted = level.Muted;
+            channel.Normalize = level.Auto;
+        }
+    }
+
+    public void SaveProfile(string name)
+    {
+        Profiles.Save(Mixer.Config, name);
+        Changed();
+    }
+
+    public void ForgetProfile(string name)
+    {
+        if (Profiles.Forget(Mixer.Config, name)) Changed();
+    }
+
     private void Save()
     {
         _save.Stop();

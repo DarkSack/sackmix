@@ -35,6 +35,8 @@ public sealed class MixConfig
     public List<ChannelConfig> Channels { get; set; } = [];
     /// <summary>Key: exe name in lower case.</summary>
     public Dictionary<string, AppConfig> Apps { get; set; } = [];
+    /// <summary>Saved mixes by name in lower case (see <see cref="Core.Profiles"/>): channel id → level.</summary>
+    public Dictionary<string, Dictionary<string, ChannelLevel>> Profiles { get; set; } = [];
 
     public static MixConfig Defaults() => new()
     {
@@ -58,6 +60,10 @@ public sealed class MixConfig
             c.Color = IsColor(c.Color) ? c.Color.ToUpperInvariant() : Palette[0];
             c.Volume = Level(c.Volume);
         }
+        Profiles = (Profiles ?? []).Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value is not null)
+            .GroupBy(kv => Core.Profiles.Key(kv.Key))
+            .ToDictionary(g => g.Key, g => g.First().Value.Where(l => l.Value is not null)
+                .ToDictionary(l => l.Key, l => { l.Value.Volume = Level(l.Value.Volume); return l.Value; }));
         Apps = (Apps ?? []).Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && kv.Value is not null)
             .GroupBy(kv => kv.Key.ToLowerInvariant())
             .ToDictionary(g => g.Key, g =>

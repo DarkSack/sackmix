@@ -44,6 +44,10 @@ nueva encima: los ajustes se conservan. Para desinstalar, Configuración › Apl
   Si mueves un programa en el mezclador de Windows, SackMix lo toma como el nuevo volumen del programa.
 - **Salidas:** sigue a los programas en **todas** las salidas activas (por si Discord usa otra). Los sonidos del
   sistema solo se toman de la salida predeterminada, porque cada salida tiene los suyos a su propio nivel.
+- **Mezcla por espacio de [SackSpace](https://github.com/DarkSack/sackspace):** al cambiar de espacio, SackSpace avisa a
+  SackMix y este pone la mezcla guardada para ese espacio (volumen, silencio y «Normalizar» de cada canal). Para
+  guardarla, deja los canales como quieras y en el menú de la bandeja elige «Guardar esta mezcla para «Espacio»»;
+  «Olvidar…» la quita. Un espacio sin mezcla guardada no cambia nada. El aviso va por una tubería local de tu usuario.
 - **Ajustes:** `%LOCALAPPDATA%\SackMix\config.json` (se guarda 0,8 s después del último cambio). Errores en `sackmix.log`.
 
 ## OBS
